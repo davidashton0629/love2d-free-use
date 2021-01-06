@@ -21,7 +21,7 @@ function love.update(dt)
 	end 
 	
 	-- if you waited long enough
-	if timeWaited >= timeToWait and t.curPrint < #t.text then
+	if timeWaited >= timeToWait and t.curPrint <= #t.text then
 		t.toShow = t.toShow .. t.text[t.curPrint] -- add to shown text
 		t.curPrint = t.curPrint + 1 -- increase printing location 
 		timeWaited = 0 -- reset wait time
