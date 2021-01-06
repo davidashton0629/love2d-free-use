@@ -51,7 +51,10 @@ function typewriter:reset(t)
 end
 
 function typewriter:remove(t)
-	table.remove(typewriters, t.id)
+	if t == "all" then typewriters = {} else 
+		assert(type(t) == "table", "FAILURE: typewriter:remove() :: the variable passed was not a typewriter.") 
+		table.remove(typewriters, t.id) 
+	end
 end
 
 return typewriter
