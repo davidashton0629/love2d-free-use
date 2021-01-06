@@ -11,7 +11,7 @@ local t = { -- store table with text information
 	curPrint = 1, -- printing location
 	toShow = "" -- text currently shown
 }
-local timeToWait = .5 -- how long you wait
+local timeToWait = .5 -- how long you need to wait
 local timeWaited = 0 -- how long you've waited
 
 function love.update(dt)
