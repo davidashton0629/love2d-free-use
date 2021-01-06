@@ -11,20 +11,15 @@ local t = { -- store table with text information
 	curPrint = 1, -- printing location
 	toShow = "" -- text currently shown
 }
-local timeToWait = .5 -- how long you need to wait
+local timeToWait = .1 -- how long you wait
 local timeWaited = 0 -- how long you've waited
 
 function love.update(dt)
-	-- if you havent waited long enough
-	if timeWaited <= timeToWait then 
-		timeWaited = timeWaited + dt -- add to wait time
-	end 
-	
-	-- if you waited long enough
-	if timeWaited >= timeToWait and t.curPrint <= #t.text then
+	timeWaited = timeWaited + dt -- add to wait time
+	while timeWaited >= timeToWait and t.curPrint <= #t.text do
+		timeWaited = timeWaited - timeToWait
 		t.toShow = t.toShow .. t.text[t.curPrint] -- add to shown text
 		t.curPrint = t.curPrint + 1 -- increase printing location 
-		timeWaited = 0 -- reset wait time
 	end
 end
 
