@@ -18,7 +18,9 @@ function typewriter:new(text, length, x, y)
 	t.toShow = ""
 	t.x = x
 	t.y = y
+	t.id = #typewriters + 1
 	t.finished = false
+	t.runCount = 0
 	t.update = function(v, dt)
 		v.timeWaited = v.timeWaited + dt
 		while v.timeWaited >= v.timeToWait and v.curPrint <= #v.text do
@@ -26,10 +28,10 @@ function typewriter:new(text, length, x, y)
 			v.toShow = v.toShow .. v.text[v.curPrint]
 			v.curPrint = v.curPrint + 1
 		end
-		if v.curPrint >= #v.text and not v.finished then v.finished = true end
+		if v.curPrint >= #v.text and not v.finished then v.finished = true v.runCount = v.runCount + 1 end
 	end
 	t.draw = function(self) love.graphics.print(self.toShow, self.x, self.y) end
-	typewriters[#typewriters + 1] = t
+	typewriters[t.id] = t
 	return t
 end
 
@@ -46,6 +48,10 @@ function typewriter:reset(t)
 	t.curPrint = 1
 	t.toShow = ""
 	t.finished = false
+end
+
+function typewriter:remove(t)
+	table.remove(typewriters, t.id)
 end
 
 return typewriter
@@ -65,5 +71,6 @@ end
 function love.draw()
 	typewriter:draw()
 	if c.finished then typewriter:reset(c) end
+	if c.runCount >= 3 then typewriter:remove(c) end
 end
 --]]
