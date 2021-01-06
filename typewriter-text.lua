@@ -40,7 +40,7 @@ function typewriter:update(dt)
 end
 
 function typewriter:draw()
-	for k, v in ipairs(typewriters) do v:draw(v) end
+	for k, v in ipairs(typewriters) do v:draw() end
 end
 
 function typewriter:reset(t)
