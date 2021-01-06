@@ -36,7 +36,7 @@ function typewriter:new(text, length, x, y)
 end
 
 function typewriter:update(dt)
-	for k, v in ipairs(typewriters) do v:update(dt, v) end
+	for k, v in ipairs(typewriters) do v:update(dt) end
 end
 
 function typewriter:draw()
