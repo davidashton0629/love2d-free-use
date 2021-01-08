@@ -1,12 +1,22 @@
+--[[
+	Requires LOVE2D -- https://love2d.org/
+--]]
 local lg = love.graphics
 local typewriters = {}
 local typewriter = {}
 
 function typewriter:new(text, length, x, y)
-	assert(text and length and x and y, "FAILURE: typewriter:new() :: missing parameter")
+	assert(text, "FAILURE: typewriter:new() :: missing parameter [text]")
+	assert(length, "FAILURE: typewriter:new() :: missing parameter [length]")
+	assert(x, "FAILURE: typewriter:new() :: missing parameter [x]")
+	assert(y, "FAILURE: typewriter:new() :: missing parameter [y]")
 	
 	local t = {}
 	if type(text) == "table" then
+		if text[2] then
+			assert(type(text[2]) == "table", "FAILURE: typewriter:new() :: text table color param incorrect.")
+			while type(text[2][1]) == "table" do text[2] = text[2][1] end
+		end
 		text, t.color, t.font = unpack(text)
 	end
 	t.text = self:split(text)
@@ -19,6 +29,7 @@ function typewriter:new(text, length, x, y)
 	t.id = #typewriters + 1
 	t.finished = false
 	t.runCount = 0
+	t.show = true
 	t.update = function(v, dt)
 		v.timeWaited = v.timeWaited + dt
 		while v.timeWaited >= v.timeToWait and v.curPrint <= #v.text do
@@ -44,22 +55,30 @@ function typewriter:new(text, length, x, y)
 end
 
 function typewriter:update(dt)
-	for k, v in ipairs(typewriters) do v:update(dt) end
+	for _,t in ipairs(typewriters) do if t.show then t:update(dt) end end
 end
 
 function typewriter:split(str)
 	local t={}
 	for s in string.gmatch(str, ".") do
-			t[#t+1] = s
+		t[#t+1] = s
 	end
 	return t
 end
 
+function typewriter:toggle(t)
+	assert(t, "FAILURE: typewriter:toggle() :: no typewriter passed.")
+	assert(type(t) == "table", "FAILURE: typewriter:toggle() :: the variable passed was not a typewriter.")
+	t.show = not t.show
+end
+
 function typewriter:draw()
-	for k, v in ipairs(typewriters) do v:draw() end
+	for _,t in ipairs(typewriters) do if t.show then t:draw() end end
 end
 
 function typewriter:reset(t)
+	assert(t, "FAILURE: typewriter:reset() :: no typewriter passed.")
+	assert(type(t) == "table", "FAILURE: typewriter:reset() :: the variable passed was not a typewriter.") 
 	t.timeWaited = 0
 	t.curPrint = 1
 	t.toShow = ""
@@ -67,6 +86,7 @@ function typewriter:reset(t)
 end
 
 function typewriter:remove(t)
+	assert(t, "FAILURE: typewriter:remove() :: no typewriter passed.")
 	if t == "all" then typewriters = {} else 
 		assert(type(t) == "table", "FAILURE: typewriter:remove() :: the variable passed was not a typewriter.") 
 		table.remove(typewriters, t.id) 
@@ -84,15 +104,19 @@ local myFont = love.graphics.newFont("pixelated.ttf")
 
 local a = typewriter:new("hello", .5, 5, 10)
 local b = typewriter:new({"world", {0,1,1,1}}, .5, 40, 10)
-local c = typewriter:new({"This is my text...", {1,0,1,1}, myFont}, .1, 5, 50)
+local c = typewriter:new({"This is my text...", {1,0,1,1}, myFont}, .05, 5, 50)
+
+local playTime = 0
 
 function love.update(dt)
 	typewriter:update(dt)
+	playTime = playTime + dt
+	if playTime > 2 then playTime = 0 typewriter:toggle(c) end
 end
 
 function love.draw()
 	typewriter:draw()
 	if c.finished then typewriter:reset(c) end
-	if c.runCount >= 3 then typewriter:remove(c) end
+	if c.runCount >= 20 then typewriter:remove(c) end
 end
 --]]
