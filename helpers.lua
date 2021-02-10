@@ -288,7 +288,7 @@ function string.split(s, p, t)
 end
 -- [[ End Not My Code ]]
 
--- [[
+--[[
    function newItem(id)
       if isInt(id) then
       
@@ -296,30 +296,30 @@ end
       
       end
    end
--- ]]
+--]]
 function isInt(n)
 	return (type(n) == "number") and (math.floor(n) == n)
 end
 
--- [[
+--[[
    Turn "25" to 25
    local x = "25"
    local result, success = toInt(x)
    if success then print(result) end
--- ]]
+--]]
 function toInt(n)
 	if type(n) ~= "number" then return n, false end 
 	return math.floor(n), true
 end
 
--- [[
+--[[
    Turn "Hello Friends, My Name Is Bob." into "hello-friends-my-name-is-bob"
--- ]]
+--]]
 function slugify(str)
 	return str:lower():gsub("%s+","-"):gsub("%p","")
 end
 
--- [[
+--[[
    Turn "hello world" into "Hello world"
 --]]
 function capFirst(str)
