@@ -1,6 +1,34 @@
 --[[
 	Requires LOVE2D -- https://love2d.org/
 --]]
+--[[
+	Copyright (c) 2021- David Ashton | CognizanceGaming
+	
+	Permission is hereby granted, free of charge, to any person obtaining a copy
+	of this software and associated documentation files (the "Software"), to deal
+	in the Software without restriction, including without limitation the rights
+	to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+	copies of the Software, and to permit persons to whom the Software is
+	furnished to do so, subject to the following conditions:
+	
+	The above copyright notice and this permission notice shall be included in
+	all copies or substantial portions of the Software.
+	
+	Except as contained in this notice, the name(s) of the above copyright holders
+	shall not be used in advertising or otherwise to promote the sale, use or
+	other dealings in this Software without prior written authorization.
+	
+	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+	IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+	FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+	AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+	LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+	THE SOFTWARE.
+--]]
+
+
+
 local lg, lt = love.graphics, love.timer
 local min, max = math.min, math.max
 local text = {}
@@ -14,6 +42,7 @@ local prefixes = {
 
 text.items = {}
 text.guis = {}
+text.fonts = {}
 
 function text:new(n, p)
 	local t = {}
@@ -38,7 +67,12 @@ function text:new(n, p)
 	t.clicked = false
 	t.clickable = true
 	t.faded = false
+	t.fadedByFunc = false
 	t.fancy = false
+	t.paddingLeft = 0
+	t.paddingRight = 0
+	t.paddingTop = 0
+	t.paddingBottom = 0
 	t.typewriter = false
 	t.typewriterPrint = ""
 	t.typewriterText = self:split(t.text)
@@ -65,12 +99,11 @@ function text:new(n, p)
 	t.opacityAnimateTime = lt.getTime()
 	
 	function t:animateToColor(c, s)
-		assert(c, "FAILURE: text:animateToColor() :: Missing param[color]")
-		assert(type(c) == "table", "FAILURE: text:animateToColor() :: Incorrect param[color] - expecting table and got " .. type(c))
-		assert(#c == 4, "FAILURE: text:animateToColor() :: Incorrect param[color] - table length 4 expected and got " .. #c)
+		assert(c, "[" .. self.name .. "] FAILURE: text:animateToColor() :: Missing param[color]")
+		assert(type(c) == "table", "[" .. self.name .. "] FAILURE: text:animateToColor() :: Incorrect param[color] - expecting table and got " .. type(c))
+		assert(#c == 4, "[" .. self.name .. "] FAILURE: text:animateToColor() :: Incorrect param[color] - table length 4 expected and got " .. #c)
 		s = s or 2
-		assert(s, "FAILURE: text:animateToColor() :: Missing param[speed]")
-		assert(type(s) == "number", "FAILURE: text:animateToColor() :: Incorrect param[speed] - expecting number and got " .. type(s))
+		assert(type(s) == "number", "[" .. self.name .. "] FAILURE: text:animateToColor() :: Incorrect param[speed] - expecting number and got " .. type(s))
 		self.colorToAnimateTo = c
 		self.colorAnimateSpeed = s
 		self.colorAnimateTime = lt.getTime()
@@ -79,12 +112,12 @@ function text:new(n, p)
 	end
 	
 	function t:animateToPosition(x, y, s)
-		assert(x, "FAILURE: text:animateToPosition() :: Missing param[x]")
-		assert(type(x) == "number", "FAILURE: text:animateToPosition() :: Incorrect param[x] - expecting number and got " .. type(x))
-		assert(y, "FAILURE: text:animateToPosition() :: Missing param[y]")
-		assert(type(y) == "number", "FAILURE: text:animateToPosition() :: Incorrect param[y] - expecting number and got " .. type(y))
+		assert(x, "[" .. self.name .. "] FAILURE: text:animateToPosition() :: Missing param[x]")
+		assert(type(x) == "number", "[" .. self.name .. "] FAILURE: text:animateToPosition() :: Incorrect param[x] - expecting number and got " .. type(x))
+		assert(y, "[" .. self.name .. "] FAILURE: text:animateToPosition() :: Missing param[y]")
+		assert(type(y) == "number", "[" .. self.name .. "] FAILURE: text:animateToPosition() :: Incorrect param[y] - expecting number and got " .. type(y))
 		s = s or 2
-		assert(type(s) == "number", "FAILURE: text:animateToPosition() :: Incorrect param[speed] - expecting number and got " .. type(s))
+		assert(type(s) == "number", "[" .. self.name .. "] FAILURE: text:animateToPosition() :: Incorrect param[speed] - expecting number and got " .. type(s))
 		for k,v in pairs(self.pos) do self.positionToAnimateFrom[k] = v end
 		self.positionToAnimateTo = {x = x, y = y}
 		self.positionAnimateDrag = s
@@ -94,11 +127,10 @@ function text:new(n, p)
 	end
 	
 	function t:animateToOpacity(o, s)
-		assert(o, "FAILURE: text:animateToOpacity() :: Missing param[o]")
-		assert(type(o) == "number", "FAILURE: text:animateToOpacity() :: Incorrect param[o] - expecting number and got " .. type(o))
+		assert(o, "[" .. self.name .. "] FAILURE: text:animateToOpacity() :: Missing param[o]")
+		assert(type(o) == "number", "[" .. self.name .. "] FAILURE: text:animateToOpacity() :: Incorrect param[o] - expecting number and got " .. type(o))
 		s = s or 1
-		assert(s, "FAILURE: text:animateToOpacity() :: Missing param[speed]")
-		assert(type(s) == "number", "FAILURE: text:animateToOpacity() :: Incorrect param[speed] - expecting number and got " .. type(s))
+		assert(type(s) == "number", "[" .. self.name .. "] FAILURE: text:animateToOpacity() :: Incorrect param[speed] - expecting number and got " .. type(s))
 		self.opacityToAnimateTo = o
 		self.opacityAnimateTime = lt.getTime()
 		self.opacityAnimateSpeed = s
@@ -111,8 +143,8 @@ function text:new(n, p)
 	end
 	
 	function t:setClickable(c)
-		assert(c ~= nil, "FAILURE: text:setClickable() :: Missing param[clickable]")
-		assert(type(c) == "boolean", "FAILURE: text:setClickable() :: Incorrect param[clickable] - expecting boolean and got " .. type(c))
+		assert(c ~= nil, "[" .. self.name .. "] FAILURE: text:setClickable() :: Missing param[clickable]")
+		assert(type(c) == "boolean", "[" .. self.name .. "] FAILURE: text:setClickable() :: Incorrect param[clickable] - expecting boolean and got " .. type(c))
 		self.clickable = c
 	end
 	
@@ -121,21 +153,25 @@ function text:new(n, p)
 	end
 	
 	function t:setColor(c)
-		assert(c, "FAILURE: text:setColor() :: Missing param[color]")
-		assert(type(c) == "table", "FAILURE: text:setColor() :: Incorrect param[color] - expecting table and got " .. type(c))
-		assert(#c == 4, "FAILURE: text:setColor() :: Incorrect param[color] - table length 4 expected and got " .. #c)
+		assert(c, "[" .. self.name .. "] FAILURE: text:setColor() :: Missing param[color]")
+		assert(type(c) == "table", "[" .. self.name .. "] FAILURE: text:setColor() :: Incorrect param[color] - expecting table and got " .. type(c))
+		assert(#c == 4, "[" .. self.name .. "] FAILURE: text:setColor() :: Incorrect param[color] - table length 4 expected and got " .. #c)
 		self.color = c
 	end
 	
+	function t:getColor()
+		return self.color
+	end
+	
 	function t:setData(d)
-		assert(d, "FAILURE: text:setData() :: Missing param[data]")
-		assert(type(d) == "table", "FAILURE: text:setData() :: Incorrect param[data] - expecting table and got " .. type(d))
-		assert(d.t or d.text, "FAILURE: text:setData() :: Missing param[data['text']")
-		assert(type(d.text) == "string", "FAILURE: text:setData() :: Incorrect param[text] - expecting string and got " .. type(d.text))
-		assert(d.x, "FAILURE: text:setData() :: Missing param[data['x']")
-		assert(type(d.x) == "number", "FAILURE: text:setData() :: Incorrect param[x] - expecting number and got " .. type(d.x))
-		assert(d.y, "FAILURE: text:setData() :: Missing param[data['y']")
-		assert(type(d.y) == "number", "FAILURE: text:setData() :: Incorrect param[y] - expecting number and got " .. type(d.y))
+		assert(d, "[" .. self.name .. "] FAILURE: text:setData() :: Missing param[data]")
+		assert(type(d) == "table", "[" .. self.name .. "] FAILURE: text:setData() :: Incorrect param[data] - expecting table and got " .. type(d))
+		assert(d.t or d.text, "[" .. self.name .. "] FAILURE: text:setData() :: Missing param[data['text']")
+		assert(type(d.text) == "string", "[" .. self.name .. "] FAILURE: text:setData() :: Incorrect param[text] - expecting string and got " .. type(d.text))
+		assert(d.x, "[" .. self.name .. "] FAILURE: text:setData() :: Missing param[data['x']")
+		assert(type(d.x) == "number", "[" .. self.name .. "] FAILURE: text:setData() :: Incorrect param[x] - expecting number and got " .. type(d.x))
+		assert(d.y, "[" .. self.name .. "] FAILURE: text:setData() :: Missing param[data['y']")
+		assert(type(d.y) == "number", "[" .. self.name .. "] FAILURE: text:setData() :: Incorrect param[y] - expecting number and got " .. type(d.y))
 		self.w = d.w or d.width or self.w
 		self.h = d.h or d.height or self.h
 		self.text = d.t or d.text or self.text
@@ -143,9 +179,14 @@ function text:new(n, p)
 		self.typewriter = d.tw and d.tw or d.typewriter and d.typewriter or self.typewriter
 		self.pos.x = d.x or self.pos.x
 		self.pos.y = d.y or self.pos.y
+		self.typewriterSpeed = d.s or d.speed or self.typewriterSpeed
 		self.pos.z = d.z or self.pos.z
 		self.color = d.color or self.color
-		self.font = d.font or self.font
+		if d.fonts then
+			for k,v in pairs(d.fonts) do
+				self.fonts[k] = v
+			end
+		end
 		self.clickable = d.clickable and d.clickable or self.clickable
 	end
 	
@@ -165,10 +206,14 @@ function text:new(n, p)
 						lg.push()
 						
 						if v.color ~= "white" then
-							lg.setColor(text.guis[self.parent].color(v.color))
+							if self.parent then
+								lg.setColor(text.guis[self.parent].color(v.color))
+							else
+								lg.setColor(v.color)
+							end
 						end
 						if v.font ~= "default" then
-							lg.setColor(v.font)
+							lg.setFont(self.fonts[v.font])
 						end
 						
 						if not v.y then
@@ -180,14 +225,12 @@ function text:new(n, p)
 								v.x = self.pos.x
 							else
 								v.x = self.typewriterText[k - 1].x + lg.getFont():getWidth(v.fullText)
-								
-								if self.width > 0 and v.x > self.pos.x + (self.width - lg.getFont():getWidth(v.fullText)) then
+								if self.w > 0 and v.x > self.pos.x + (self.w - lg.getFont():getWidth(v.fullText)) then
 									v.x = self.pos.x
 									v.y = self.typewriterText[k - 1].y + lg.getFont():getHeight(v.fullText) 
 								end
 							end
 						end
-						
 						lg.print(v.toShow, v.x, v.y)
 						lg.setColor(1,1,1,1)
 						lg.pop()
@@ -210,34 +253,58 @@ function text:new(n, p)
 	end
 	
 	function t:fadeIn()
-		self:animateToOpacity(1)
+		if self.beforeFadeOut then self:beforeFadeOut() end
 		self.hidden = false
+		if self.faded then
+			self.animateColor = true
+			self.animatePosition = true
+		end
 		self.faded = false
+		self.fadedByFunc = true
+		self:animateToOpacity(1)
 		if self.onFadeIn then self:onFadeIn() end
 	end
 	
-	function t:fadeOut(p)
-		if p then self.faded = true end
+	function t:fadeOut(p, h)
+		if self.beforeFadeOut then self:beforeFadeOut() end
+		if p then 
+			self.faded = true
+			if h then
+				self.animateColor = false
+				self.animatePosition = false
+			end
+		end
+		self.fadedByFunc = true
 		self:animateToOpacity(0)
 		if self.onFadeOut then self:onFadeOut() end
 	end
 	
 	function t:addFont(f, n)
-		assert(f, "FAILURE: text:addFont() :: Missing param[font]")
-		assert(type(f) == "userdata", "FAILURE: text:addFont() :: Incorrect param[font] - expecting font userdata and got " .. type(f))
-		assert(n, "FAILURE: text:addFont() :: Missing param[name]")
-		assert(type(n) == "string", "FAILURE: text:addFont() :: Incorrect param[name] - expecting string and got " .. type(n))
+		assert(f, "[" .. self.name .. "] FAILURE: text:addFont() :: Missing param[font]")
+		assert(type(f) == "userdata", "[" .. self.name .. "] FAILURE: text:addFont() :: Incorrect param[font] - expecting font userdata and got " .. type(f))
+		assert(n, "[" .. self.name .. "] FAILURE: text:addFont() :: Missing param[name]")
+		assert(type(n) == "string", "[" .. self.name .. "] FAILURE: text:addFont() :: Incorrect param[name] - expecting string and got " .. type(n))
 		self.fonts[n] = f
 	end
 	
 	function t:setFont(n)
-		assert(n, "FAILURE: text:setFont() :: Missing param[name]")
-		assert(type(n) == "string", "FAILURE: text:setFont() :: Incorrect param[name] - expecting string and got " .. type(n))
+		assert(n, "[" .. self.name .. "] FAILURE: text:setFont() :: Missing param[name]")
+		assert(type(n) == "string", "[" .. self.name .. "] FAILURE: text:setFont() :: Incorrect param[name] - expecting string and got " .. type(n))
 		self.font = self.fonts[n]
 	end
 	
 	function t:isHovered()
 		return self.hovered
+	end
+	
+	function t:setTypewriterSpeed(s)
+		assert(s, "[" .. self.name .. "] FAILURE: text:setTypewriterSpeed() :: Missing param[speed]")
+		assert(type(s) == "number", "[" .. self.name .. "] FAILURE: text:setTypewriterSpeed() :: Incorrect param[speed] - expecting number and got " .. type(s))
+		self.typewriterSpeed = n
+	end
+	
+	function t:getTypewriterSpeed()
+		return self.typewriterSpeed
 	end
 	
 	function t:startAnimation()
@@ -267,8 +334,13 @@ function text:new(n, p)
 			if self.fancy then
 				for k,v in ipairs(self.typewriterText) do
 					if v.text then
-						if v.delay > 0 and not delayWaited >= v.delay then
-							delayWaited = delayWaited + dt
+						v.timeWaited = v.timeWaited + dt
+						print(v.delay, v.delayWaited)
+						if v.delay > 0 and v.delayWaited < v.delay then
+							v.delayWaited = v.delayWaited + dt
+							if v.delayWaited >= v.delay then
+								v.needToWait = false
+							end
 						end
 						if not v.needToWait then
 							if not v.started then
@@ -276,8 +348,9 @@ function text:new(n, p)
 							end
 							while v.timeWaited >= v.time and v.textPos <= #v.text do
 								v.timeWaited = v.timeWaited - v.time
+								print(v.toShow, v.textPos, v.text[v.textPos])
 								v.toShow = v.toShow .. v.text[v.textPos]
-								v.textPos = v.textPos = 1
+								v.textPos = v.textPos + 1
 							end
 							if v.textPos >= #v.text then
 								v.finished = true
@@ -287,7 +360,7 @@ function text:new(n, p)
 					if not v.finished then break end
 				end
 			else
-				while self.typewriterWaited >= self.typewriterSpeed and self.typewriterPrint <= #self.typewriterText do
+				while self.typewriterWaited >= self.typewriterSpeed and self.typewriterPos <= #self.typewriterText do
 					self.typewriterWaited = self.typewriterWaited - self.typewriterSpeed
 					self.typewriterPrint = self.typewriterPrint .. self.typewriterText[self.typewriterPos]
 					self.typewriterPos = self.typewriterPos + 1
@@ -335,6 +408,15 @@ function text:new(n, p)
 						self.color[4] = max(self.opacityToAnimateTo, self.color[4] - (self.opacityAnimateSpeed * dt))
 					end
 					atProperOpacity = false
+				else
+					if self.fadedByFunc then
+						if self.color[4] == 1 then
+							if self.afterFadeIn then self:afterFadeIn() end
+						elseif self.color[4] == 0 then
+							if self.afterFadeOut then self:afterFadeOut() end
+						end
+						self.fadedByFunc = false
+					end
 				end
 			end
 			
@@ -362,13 +444,29 @@ function text:new(n, p)
 	end
 	
 	function t:setOpacity(o)
-		assert(o, "FAILURE: text:setUseBorder() :: Missing param[opacity]")
-		assert(type(o) == "number", "FAILURE: text:setUseBorder() :: Incorrect param[opacity] - expecting number and got " .. type(o))
+		assert(o, "[" .. self.name .. "] FAILURE: text:setUseBorder() :: Missing param[opacity]")
+		assert(type(o) == "number", "[" .. self.name .. "] FAILURE: text:setUseBorder() :: Incorrect param[opacity] - expecting number and got " .. type(o))
 		self.color[4] = o
 	end
 	
 	function t:getOpacity()
 		return self.color[4]
+	end
+	
+	function t:touchmoved(id, x, y, dx, dy, pressure)
+		if (x >= self.pos.x + self.paddingLeft and x <= self.pos.x + self.w + self.paddingRight) and 
+		(y >= self.pos.y + self.paddingTop and y <= self.pos.y + self.h + self.paddingBottom) then
+			if not self.hovered then
+				if self.onHoverEnter then self:onHoverEnter() end
+				self.hovered = true 
+			end
+			if self.whileHovering then self:whileHovering() end
+		else
+			if self.hovered then 
+				if self.onHoverExit then self:onHoverExit() end
+				self.hovered = false 
+			end
+		end
 	end
 	
 	function t:typewriterCycle()
@@ -381,8 +479,8 @@ function text:new(n, p)
 	end
 	
 	function t:setText(txt)
-		assert(txt ~= nil, "FAILURE: text:setText() :: Missing param[text]")
-		assert(type(txt) == "string", "FAILURE: text:setText() :: Incorrect param[text] - expecting boolean and got " .. type(txt))
+		assert(txt ~= nil, "[" .. self.name .. "] FAILURE: text:setText() :: Missing param[text]")
+		assert(type(txt) == "string", "[" .. self.name .. "] FAILURE: text:setText() :: Incorrect param[text] - expecting boolean and got " .. type(txt))
 		self.text = text
 		self.typewriterText, self.fancy = text:split(txt)
 	end
@@ -392,8 +490,8 @@ function text:new(n, p)
 	end
 	
 	function t:setAsTypewriter(aT)
-		assert(aT ~= nil, "FAILURE: text:setAsTypewriter() :: Missing param[useBorder]")
-		assert(type(aT) == "boolean", "FAILURE: text:setAsTypewriter() :: Incorrect param[useBorder] - expecting boolean and got " .. type(aT))
+		assert(aT ~= nil, "[" .. self.name .. "] FAILURE: text:setAsTypewriter() :: Missing param[useBorder]")
+		assert(type(aT) == "boolean", "[" .. self.name .. "] FAILURE: text:setAsTypewriter() :: Incorrect param[useBorder] - expecting boolean and got " .. type(aT))
 		self.typewriter = aT
 	end
 	
@@ -402,8 +500,8 @@ function text:new(n, p)
 	end
 	
 	function t:setX(x)
-		assert(x, "FAILURE: text:setX() :: Missing param[x]")
-		assert(type(x) == "number", "FAILURE: text:setX() :: Incorrect param[x] - expecting number and got " .. type(x))
+		assert(x, "[" .. self.name .. "] FAILURE: text:setX() :: Missing param[x]")
+		assert(type(x) == "number", "[" .. self.name .. "] FAILURE: text:setX() :: Incorrect param[x] - expecting number and got " .. type(x))
 		self.pos.x = x
 	end
 	
@@ -412,8 +510,8 @@ function text:new(n, p)
 	end
 	
 	function t:setY(y)
-		assert(y, "FAILURE: text:setY() :: Missing param[y]")
-		assert(type(y) == "number", "FAILURE: text:setY() :: Incorrect param[y] - expecting number and got " .. type(y))
+		assert(y, "[" .. self.name .. "] FAILURE: text:setY() :: Missing param[y]")
+		assert(type(y) == "number", "[" .. self.name .. "] FAILURE: text:setY() :: Incorrect param[y] - expecting number and got " .. type(y))
 		self.pos.y = y
 	end
 	
@@ -422,8 +520,8 @@ function text:new(n, p)
 	end
 	
 	function t:setZ(z)
-		assert(z, "FAILURE: text:setZ() :: Missing param[z]")
-		assert(type(z) == "number", "FAILURE: text:setZ() :: Incorrect param[z] - expecting number and got " .. type(z))
+		assert(z, "[" .. self.name .. "] FAILURE: text:setZ() :: Missing param[z]")
+		assert(type(z) == "number", "[" .. self.name .. "] FAILURE: text:setZ() :: Incorrect param[z] - expecting number and got " .. type(z))
 		self.pos.z = z
 	end
 	
@@ -441,9 +539,9 @@ end
 function text:split(s)
 	local t={}
 	local f = false
-	if string.match(s, "{") then
+	if s:match("{") and s:match("}") then
 		f = true
-		for b in string.gmatch(str, ".-{") do
+		for b in s:gmatch(".-{") do
 			local id = #t + 1
 			t[id] = {}
 			t[id].text = {}
@@ -455,7 +553,7 @@ function text:split(s)
 			t[id].time = 0.5
 			t[id].started = false
 			t[id].finished = false
-			t[id].textPos = 0
+			t[id].textPos = 1
 			t[id].timeWaited = 0
 			t[id].toShow = ""
 			if string.match(b, "}") then
@@ -466,7 +564,7 @@ function text:split(s)
 							t[id].color = m:gsub("^" .. prefixes.color .. "=", "")
 						end
 						if string.sub(m,1,1) == prefixes.delay then
-							t[id].delay = m:gsub("^" .. prefixes.delay .. "=", "")
+							t[id].delay = tonumber((m:gsub("^" .. prefixes.delay .. "=", "")))
 							t[id].needToWait = true
 						end
 						if string.sub(m,1,1) == prefixes.font then
@@ -511,7 +609,7 @@ local playTime = 0
 
 function love.load()
 	a:setData({t = "Hello World!", x = 10, y = 100, color = colors.green, font = myFont, typewriter = true, speed = 2})
-	b:setData({t = "Let's go to the dance." x = 50, y = 250, typewriter = true, color = colors.blue, speed = 4})
+	b:setData({t = "Let's {c=green}go to the{/} dance." x = 50, y = 250, typewriter = true, color = colors.blue, speed = 4})
 	c:setData({t = "No pets are allowed at the dance.", x = 50, y = 265, typewriter = true, color = colors.blue, speed = 0.5})
 end
 
