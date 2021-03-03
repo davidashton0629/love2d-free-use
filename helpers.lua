@@ -308,8 +308,7 @@ end
    if success then print(result) end
 --]]
 function toInt(n)
-	if type(n) ~= "number" then return n, false end 
-	return math.floor(n), true
+	return (type(n) == "number") and math.floor(n) or (type(n) == "string") and math.floor(tonumber(n))
 end
 
 --[[
